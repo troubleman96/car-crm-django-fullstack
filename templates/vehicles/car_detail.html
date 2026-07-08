@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ car.make }} {{ car.model }} - CarDealTZ{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <a href="/" class="text-sm text-blue-600 hover:text-blue-800 mb-4 inline-block">&larr; Back to inventory</a>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {% with primary=car.images.all|dictsortreversed:"is_primary"|first %}
+            {% if primary %}
+            <div class="h-80 bg-gray-100 flex items-center justify-center overflow-hidden">
+                <img src="{{ primary.image_url }}" alt="{{ car }}" class="w-full h-full object-cover">
+            </div>
+            {% else %}
+            <div class="h-80 bg-gray-100 flex items-center justify-center text-gray-400">
+                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            {% endif %}
+        {% endwith %}
+        <div class="p-8">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">{{ car.make }} {{ car.model }}</h1>
+                    <p class="text-gray-500 mt-1">{{ car.year }}</p>
+                </div>
+                <span class="text-2xl font-bold text-blue-600">TZS {{ car.price|floatformat:0 }}</span>
+            </div>
+            {% if car.description %}
+            <p class="text-gray-600 mt-4 leading-relaxed">{{ car.description }}</p>
+            {% endif %}
+            <div class="flex gap-3 mt-8">
+                <a href="{% url 'leads:book' %}?car={{ car.id }}" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition">Book Test Drive</a>
+                <a href="{% url 'leads:book' %}?car={{ car.id }}" class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition">Request Call Back</a>
+            </div>
+        </div>
+    </div>
+    {% if car.images.all|length > 1 %}
+    <div class="grid grid-cols-4 gap-2 mt-4">
+        {% for img in car.images.all %}
+        <div class="h-24 bg-gray-100 rounded-lg overflow-hidden">
+            <img src="{{ img.image_url }}" alt="" class="w-full h-full object-cover">
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% include 'chatbot/widget.html' %}
+{% endblock %}

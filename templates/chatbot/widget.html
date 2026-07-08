@@ -1,0 +1,69 @@
+<div class="chat-widget" x-data="chatWidget()" x-init="init()">
+    <div class="chat-box bg-white" :class="{'open': open}" id="chatBox">
+        <div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
+            <span class="font-medium text-sm">Chat with us</span>
+            <button @click="toggle()" class="text-white/80 hover:text-white text-lg leading-none">&times;</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <template x-for="msg in messages" :key="msg.id">
+                <div class="chat-msg" :class="msg.sender === 'customer' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'" x-text="msg.message"></div>
+            </template>
+        </div>
+        <div class="chat-input-bar">
+            <input type="text" x-model="input" @keydown.enter="send()" placeholder="Type a message..." id="chatInput">
+            <button @click="send()" class="bg-blue-600 text-white hover:bg-blue-700 transition" :disabled="!input.trim()">Send</button>
+        </div>
+    </div>
+    <div class="chat-widget-btn bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition" @click="toggle()">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+    </div>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script>
+function chatWidget() {
+    return {
+        open: false,
+        input: '',
+        sessionId: null,
+        phone: '',
+        messages: [
+            { id: 0, sender: 'bot', message: 'Hello! Welcome to CarDealTZ. How can I help you today?' }
+        ],
+        toggle() {
+            this.open = !this.open;
+            if (this.open) setTimeout(() => this.scrollDown(), 100);
+        },
+        async send() {
+            if (!this.input.trim()) return;
+            const msg = this.input;
+            this.messages.push({ id: Date.now(), sender: 'customer', message: msg });
+            this.input = '';
+            this.scrollDown();
+            try {
+                const res = await fetch('/chatbot/message/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: JSON.stringify({ message: msg, session_id: this.sessionId, phone: this.phone })
+                });
+                const data = await res.json();
+                this.sessionId = data.session_id;
+                this.messages.push({ id: Date.now() + 1, sender: 'bot', message: data.reply });
+                this.scrollDown();
+            } catch(e) {
+                this.messages.push({ id: Date.now() + 1, sender: 'bot', message: 'Sorry, something went wrong. Please try again.' });
+                this.scrollDown();
+            }
+        },
+        scrollDown() {
+            setTimeout(() => {
+                const el = document.getElementById('chatMessages');
+                if (el) el.scrollTop = el.scrollHeight;
+            }, 50);
+        },
+        init() {
+            this.phone = '{{ user.phone|default:"" }}';
+        }
+    };
+}
+</script>
