@@ -1,4 +1,5 @@
-{#
+{% extends 'base.html' %}
+{% comment %}
 ================================================================================
  TEMPLATE: car_detail.html
  PURPOSE:  Single-vehicle detail page. Shows the car's primary image (large
@@ -11,24 +12,23 @@
       and model (e.g. "Toyota Camry - CarDealTZ").
    2. Displays a "Back to inventory" breadcrumb link pointing to the home page.
    3. Primary image section: selects the image where `is_primary=True` via the
-      `dictsortreversed` filter chain. Falls back to a placeholder SVG if no
+      dictsortreversed filter chain. Falls back to a placeholder SVG if no
       images exist.
-   4. Info section: car name, year, price (formatted with `floatformat`),
-      and an optional `description` field.
-   5. Action buttons: both link to the `leads:book` URL — one for test drives,
-      one for call backs. The `?car={{ car.id }}` query parameter pre-selects
+   4. Info section: car name, year, price (formatted with floatformat),
+      and an optional description field.
+   5. Action buttons: both link to the leads:book URL -- one for test drives,
+      one for call backs. The ?car={{ car.id }} query parameter pre-selects
       this vehicle on the booking form.
    6. Thumbnail gallery: appears only when more than one image is attached
       to the car. All images (including the primary) are shown at a smaller
       scale so the user can browse the full set.
 
- CONTEXT (provided by the view — vehicles/views.py):
+ CONTEXT (provided by the view -- vehicles/views.py):
    - car : A single Vehicle model instance (includes make, model, year, price,
-           description, and the reverse relation `images.all` from the
+           description, and the reverse relation images.all from the
            associated VehicleImage model).
-  ============================================================================ #}
-
-{% extends 'base.html' %}
+  ============================================================================
+{% endcomment %}
 {% block title %}{{ car.make }} {{ car.model }} - CarDealTZ{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto">

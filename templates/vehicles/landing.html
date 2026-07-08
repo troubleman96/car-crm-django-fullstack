@@ -1,4 +1,5 @@
-{#
+{% extends 'base.html' %}
+{% comment %}
 ================================================================================
  TEMPLATE: landing.html
  PURPOSE:  Main landing / homepage for CarDealTZ. Displays a rotating banner
@@ -7,26 +8,20 @@
 
  FLOW:
    1. Extends base.html (inherits head/footer/nav from the base layout).
-   2. Checks if `banners` queryset exists → renders an Alpine.js carousel.
+   2. Checks if banners queryset exists -> renders an Alpine.js carousel.
       Falls back to a static hero text block if no banners.
-   3. Checks if `promotions` queryset exists → renders promotion cards
+   3. Checks if promotions queryset exists -> renders promotion cards
       (with coloured labels, optional discount, primary image).
-   4. Renders ALL `cars` queryset in a responsive grid (3-col → 2-col → 1-col).
+   4. Renders ALL cars queryset in a responsive grid (3-col -> 2-col -> 1-col).
       Shows an "empty state" message when no cars exist.
    5. Includes the chatbot widget at the bottom of the page.
 
- CONTEXT (provided by the view — likely vehicles/views.py):
+ CONTEXT (provided by the view -- likely vehicles/views.py):
    - banners   : QuerySet of Banner models (image_url, title, subtitle, link_url)
    - promotions: QuerySet of Promotion models (label, discount_percent, car FK)
    - cars      : QuerySet of Vehicle models (make, model, year, price, images)
-
- NOTE ON DJANGO TEMPLATE COMMENTS:
-   Comments use the {# #} syntax. These are NEVER sent to the browser —
-   they exist only in the template source file on the server.
 ================================================================================
-#}
-
-{% extends 'base.html' %}
+{% endcomment %}
 {% load static %}
 {% block title %}CarDealTZ - Find Your Perfect Car{% endblock %}
 {% block content %}

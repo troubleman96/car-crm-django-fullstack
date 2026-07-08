@@ -1,4 +1,5 @@
-{#
+{% extends 'base.html' %}
+{% comment %}
 ================================================================================
  TEMPLATE: book.html
  PURPOSE:  Appointment booking form for CarDealTZ. Allows a user to:
@@ -11,33 +12,33 @@
  FLOW:
    1. Extends base.html.
    2. Shows a "Back to home" breadcrumb link.
-   3. If a `car` object was passed from the view (pre-selected), renders a
+   3. If a car object was passed from the view (pre-selected), renders a
       summary card showing the car's make, model, year, and price.
    4. Renders a POST form with:
-      - A hidden `car_id` input (populated from the view's `car` context or
+      - A hidden car_id input (populated from the view's car context or
         left blank for a general inquiry).
       - A required phone number field.
       - A required appointment type dropdown.
       - A required datetime-local picker for scheduling.
    5. Includes the chatbot widget on the page.
 
- CONTEXT (provided by the view — leads/views.py):
+ CONTEXT (provided by the view -- leads/views.py):
    - car : (Optional) A single Vehicle model instance. Passed when the user
            arrives via a "Book Test Drive" link that includes ?car=<ID>.
-           The view looks up `Vehicle.objects.get(id=...)` and injects it.
-           If the ID is invalid or missing, `car` is None.
+           The view looks up Vehicle.objects.get(id=...) and injects it.
+           If the ID is invalid or missing, car is None.
 
  MODEL CONNECTION:
    This form posts to a view that creates a Lead model instance:
      Lead(
-         car_id=car_id,          # FK to Vehicle (nullable for general inquiries)
-         phone=phone,            # CharField — primary contact method
-         type=type,              # CharField with choices: test_drive / call_back / showroom_visit
-         scheduled_at=scheduled_at  # DateTimeField — preferred appointment time
+         car_id=car_id,        # FK to Vehicle (nullable for general inquiries)
+         phone=phone,          # CharField -- primary contact method
+         type=type,            # CharField with choices: test_drive / call_back / showroom_visit
+         scheduled_at=scheduled_at  # DateTimeField -- preferred appointment time
      )
-  ============================================================================ #}
-
-{% extends 'base.html' %}
+================================================================================
+{% endcomment %}
+{% load static %}
 {% block title %}Book Appointment - CarDealTZ{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto">
@@ -49,27 +50,29 @@
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Book an Appointment</h1>
         <p class="text-sm text-gray-500 mb-6">Fill in the details and we'll confirm your booking via SMS.</p>
 
-        {# =====================================================================
-           PRE-SELECTED CAR INFO CARD
-           ---------------------------------------------------------------
-           This section ONLY appears when the user clicked a "Book Test Drive"
-           or "View Details → Book" link that carried a `?car=<ID>` parameter.
+        {% comment %}
+          =====================================================================
+          PRE-SELECTED CAR INFO CARD
+          ---------------------------------------------------------------
+          This section ONLY appears when the user clicked a "Book Test Drive"
+          or "View Details -> Book" link that carried a ?car=<ID> parameter.
 
-           The view resolved that ID into a `car` object. The card shows:
-           - A label ("Selected car")
-           - The car's display name: "Make Model (Year)"
-           - The price in TZS
+          The view resolved that ID into a car object. The card shows:
+          - A label ("Selected car")
+          - The car's display name: "Make Model (Year)"
+          - The price in TZS
 
-           WHY THIS MATTERS:
-           - It gives the user visual confirmation that they are booking the
-             right vehicle before they fill in their details.
-           - The hidden `car_id` input (below) will carry the same ID so the
-             view knows which car was selected.
+          WHY THIS MATTERS:
+          - It gives the user visual confirmation that they are booking the
+            right vehicle before they fill in their details.
+          - The hidden car_id input (below) will carry the same ID so the
+            view knows which car was selected.
 
-           If the user arrived at this page directly (no ?car= parameter),
-           `car` will be None and the card is skipped entirely. The booking
-           then becomes a "general inquiry" with no specific vehicle attached.
-          ===================================================================== #}
+          If the user arrived at this page directly (no ?car= parameter),
+          car will be None and the card is skipped entirely. The booking
+          then becomes a "general inquiry" with no specific vehicle attached.
+          =====================================================================
+        {% endcomment %}
 
         {% if car %}
         <div class="bg-gray-50 rounded-lg p-4 mb-6 flex items-center gap-4">
@@ -114,21 +117,10 @@
             {# PHONE NUMBER FIELD #}
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-                {# `required` attribute triggers browser-side validation before the form is submitted. The view should also validate server-side. #}
                 <input type="text" name="phone" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm" placeholder="0712345678">
             </div>
 
             {# APPOINTMENT TYPE DROPDOWN #}
-            {#
-               The `value` attribute of each <option> maps directly to the
-               `type` field on the Lead model. The model's `choices` tuple
-               likely looks like:
-                 ('test_drive', 'Test Drive'),
-                 ('call_back', 'Call Back'),
-                 ('showroom_visit', 'Showroom Visit')
-               The stored value is the short code (first element), and the
-               human-readable label is what the user sees.
-            #}
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Appointment Type *</label>
                 <select name="type" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
@@ -139,13 +131,6 @@
             </div>
 
             {# DATE & TIME PICKER #}
-            {#
-               `type="datetime-local"` is an HTML5 input that opens a native
-               date+time picker in the browser. The value is sent as a string
-               like "2026-07-10T14:30". The Django view can parse this into a
-               Python datetime using `datetime.fromisoformat()` or a form
-               field's built-in parsing.
-            #}
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Preferred Date & Time *</label>
                 <input type="datetime-local" name="scheduled_at" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
@@ -156,12 +141,6 @@
         </form>
     </div>
 </div>
-
-{# =========================================================================
-   CHATBOT WIDGET
-   Included here so users can ask questions while filling out the booking
-   form — e.g. "What documents do I need for a test drive?"
-  ========================================================================= #}
 
 {% include 'chatbot/widget.html' %}
 {% endblock %}
