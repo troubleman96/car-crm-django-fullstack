@@ -1,49 +1,132 @@
-{% extends 'base.html' %}
-{% block title %}Staff Login - Car Dealership{% endblock %}
-{% block content %}
-{#
-   STAFF LOGIN PAGE
-   =================
-   This is for dealership employees (staff users with passwords).
-   Customers use the OTP login flow instead (otp_send.html + otp_verify.html).
-
-   The form submits to accounts:staff_login (/accounts/login/).
-   The StaffLoginForm validates phone + password, calls Django's authenticate(),
-   and checks that the user has is_staff=True.
-
-   Flow:
-     1. User enters phone + password
-     2. StaffLoginForm.clean() normalizes phone (adds +255 if needed)
-     3. authenticate(phone=..., password=...) looks up the user
-     4. If valid AND is_staff=True → login() creates a session, redirects to /admin/
-     5. If invalid → shows "Invalid phone number or password" error
-#}
-<div class="max-w-md mx-auto mt-16">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-6">Staff Login</h1>
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            {# Display form-level errors (e.g. "Invalid phone or password") #}
-            {% if form.non_field_errors %}
-                <div class="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg border border-red-200">{{ form.non_field_errors.0 }}</div>
-            {% endif %}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input type="text" name="phone" required
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-                       placeholder="+255712345678">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login - CarDealTZ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="font-sans antialiased">
+    <div class="min-h-screen flex">
+        {# ===== LEFT SIDE: BRANDING + CAR IMAGE ===== #}
+        <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-900">
+            {# Background image with overlay #}
+            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1200')] bg-cover bg-center"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-gray-900/90 via-blue-900/60 to-gray-900/90"></div>
+            {# Subtle pattern overlay #}
+            <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 40px 40px;"></div>
+            {# Content overlay #}
+            <div class="relative z-10 flex flex-col justify-between w-full p-12">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                            <span class="text-gray-900 font-bold text-lg">C</span>
+                        </div>
+                        <span class="text-white font-bold text-2xl">CarDeal<span class="text-blue-400">TZ</span></span>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-4 leading-tight">Drive Your<br>Success Forward</h1>
+                    <p class="text-gray-300 text-lg max-w-md">Enterprise dealership management platform trusted by leading automotive brands across Tanzania.</p>
+                    <div class="flex gap-4 mt-8">
+                        <div class="flex -space-x-2">
+                            <div class="w-10 h-10 rounded-full border-2 border-gray-800 bg-amber-400 flex items-center justify-center text-xs font-bold text-gray-900">JM</div>
+                            <div class="w-10 h-10 rounded-full border-2 border-gray-800 bg-emerald-400 flex items-center justify-center text-xs font-bold text-gray-900">AM</div>
+                            <div class="w-10 h-10 rounded-full border-2 border-gray-800 bg-rose-400 flex items-center justify-center text-xs font-bold text-gray-900">PK</div>
+                            <div class="w-10 h-10 rounded-full border-2 border-gray-800 bg-sky-400 flex items-center justify-center text-xs font-bold text-gray-900">+4</div>
+                        </div>
+                        <span class="text-gray-400 text-sm self-center">Trusted by 500+ dealers</span>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-sm">&copy; 2026 CarDealTZ. All rights reserved.</p>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" name="password" required
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-                       placeholder="Enter your password">
+        </div>
+
+        {# ===== RIGHT SIDE: LOGIN FORM ===== #}
+        <div class="w-full lg:w-1/2 flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50/30 p-6">
+            <div class="w-full max-w-md">
+                {# Back link (mobile only) #}
+                <a href="/" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-8 lg:hidden">
+                    <i class="fas fa-arrow-left text-xs"></i> Back to home
+                </a>
+
+                {# Mobile logo #}
+                <div class="lg:hidden flex items-center gap-2 mb-8">
+                    <div class="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">C</span>
+                    </div>
+                    <span class="text-gray-900 font-bold text-xl">CarDeal<span class="text-blue-600">TZ</span></span>
+                </div>
+
+                {# Form card #}
+                <div class="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-8 lg:p-10">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-gray-900">Welcome back</h2>
+                        <p class="text-gray-500 mt-1">Sign in to your staff account</p>
+                    </div>
+
+                    <form method="post" class="space-y-5">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                            <i class="fas fa-circle-exclamation text-red-500 mt-0.5"></i>
+                            <p class="text-sm text-red-700">{{ form.non_field_errors.0 }}</p>
+                        </div>
+                        {% endif %}
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fas fa-phone text-sm"></i>
+                                </div>
+                                <input type="text" name="phone" required
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm transition"
+                                    placeholder="+255 71 234 5678">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fas fa-lock text-sm"></i>
+                                </div>
+                                <input type="password" name="password" required
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm transition"
+                                    placeholder="Enter your password">
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                            class="w-full bg-gray-900 text-white py-3 rounded-xl hover:bg-gray-800 font-semibold text-sm transition shadow-lg shadow-gray-900/20">
+                            Sign in
+                        </button>
+                    </form>
+
+                    {# Divider #}
+                    <div class="relative my-6">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                        <div class="relative flex justify-center"><span class="bg-white px-3 text-xs text-gray-400">OR</span></div>
+                    </div>
+
+                    {# Customer login link #}
+                    <a href="{% url 'accounts:otp_send' %}"
+                        class="flex items-center justify-center gap-2 w-full py-3 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm text-gray-700 font-medium transition">
+                        <i class="fas fa-mobile-screen-button text-gray-400"></i>
+                        Login with OTP
+                    </a>
+                </div>
+
+                <p class="mt-6 text-center text-sm text-gray-400">
+                    &copy; 2026 CarDealTZ. All rights reserved.
+                </p>
             </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm transition">Login</button>
-        </form>
-        <p class="mt-4 text-center text-sm text-gray-500">
-            <a href="/" class="text-blue-600 hover:text-blue-800">Back to home</a>
-        </p>
+        </div>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>

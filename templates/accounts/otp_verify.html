@@ -1,51 +1,99 @@
-{% extends 'base.html' %}
-{% block title %}Verify Code - Car Dealership{% endblock %}
-{% block content %}
-{#
-   OTP VERIFY PAGE — Customer Login (Step 2 of 2)
-   ================================================
-   This is the second step of the customer OTP login flow.
-   After receiving the 6-digit code via SMS, the user enters it here.
-
-   Flow:
-     1. The phone number is already in the session (set by otp_send view)
-     2. User enters the 6-digit code they received via SMS
-     3. Form POSTs to accounts:otp_verify (/accounts/otp/verify/)
-     4. customer_otp_verify() view:
-        a. Looks up the OTP record matching phone + code + not used + not expired
-        b. If valid: marks OTP as used, creates/finds the user account,
-           logs the user in, redirects to home page (or booking page if
-           they were redirected from a booking)
-        c. If invalid/expired: shows error message
-     5. If the phone is not in the session (e.g. direct URL access),
-        redirects back to otp_send
-
-   Security notes:
-     - OTP codes are single-use (is_used=True prevents replay)
-     - OTP codes expire after 5 minutes (checked via expires_at__gt=now)
-     - The phone is stored in the session, not in a hidden form field
-       (prevents tampering)
-#}
-<div class="max-w-md mx-auto mt-16">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Verify Code</h1>
-        <p class="text-sm text-gray-500 mb-6">Enter the 6-digit code sent to your phone.</p>
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Verification Code</label>
-                {# The input is styled with large centered text and wide letter-spacing
-                   for a better OTP-entry experience. maxlength=6 matches the 6-digit code. #}
-                <input type="text" name="code" maxlength="6" required
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-center text-2xl tracking-widest"
-                       placeholder="000000">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Code - CarDealTZ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="font-sans antialiased">
+    <div class="min-h-screen flex">
+        {# ===== LEFT SIDE: BRANDING + CAR IMAGE ===== #}
+        <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-900">
+            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=1200')] bg-cover bg-center"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-gray-900/90 via-blue-900/60 to-gray-900/90"></div>
+            <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 40px 40px;"></div>
+            <div class="relative z-10 flex flex-col justify-between w-full p-12">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                            <span class="text-gray-900 font-bold text-lg">C</span>
+                        </div>
+                        <span class="text-white font-bold text-2xl">CarDeal<span class="text-blue-400">TZ</span></span>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-4 leading-tight">Almost<br>There!</h1>
+                    <p class="text-gray-300 text-lg max-w-md">We've sent a verification code to your phone. Enter it below to continue.</p>
+                    <div class="mt-8 flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-xl px-5 py-4 max-w-sm border border-white/10">
+                        <i class="fas fa-shield-halved text-blue-400 text-xl"></i>
+                        <p class="text-gray-300 text-sm">Your code expires in 5 minutes for security.</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-sm">&copy; 2026 CarDealTZ. All rights reserved.</p>
+                </div>
             </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm transition">Verify</button>
-        </form>
-        <p class="mt-4 text-center text-sm text-gray-500">
-            {# If the code expired or never arrived, user can request a new one #}
-            <a href="{% url 'accounts:otp_send' %}" class="text-blue-600 hover:text-blue-800">Request new code</a>
-        </p>
+        </div>
+
+        {# ===== RIGHT SIDE: VERIFY FORM ===== #}
+        <div class="w-full lg:w-1/2 flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50/30 p-6">
+            <div class="w-full max-w-md">
+                {# Back link (mobile only) #}
+                <a href="{% url 'accounts:otp_send' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-8 lg:hidden">
+                    <i class="fas fa-arrow-left text-xs"></i> Back
+                </a>
+
+                {# Mobile logo #}
+                <div class="lg:hidden flex items-center gap-2 mb-8">
+                    <div class="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">C</span>
+                    </div>
+                    <span class="text-gray-900 font-bold text-xl">CarDeal<span class="text-blue-600">TZ</span></span>
+                </div>
+
+                {# Form card #}
+                <div class="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-8 lg:p-10">
+                    <div class="mb-8">
+                        <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-message text-emerald-600 text-xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900">Check your phone</h2>
+                        <p class="text-gray-500 mt-1">Enter the 6-digit code we sent you.</p>
+                    </div>
+
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Verification Code</label>
+                            <input type="text" name="code" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" required
+                                class="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-center text-3xl tracking-[0.5em] font-mono transition"
+                                placeholder="000000">
+                        </div>
+
+                        <button type="submit"
+                            class="w-full bg-gray-900 text-white py-3.5 rounded-xl hover:bg-gray-800 font-semibold text-sm transition shadow-lg shadow-gray-900/20">
+                            <i class="fas fa-check mr-2"></i> Verify Code
+                        </button>
+                    </form>
+
+                    {# Resend link #}
+                    <div class="mt-6 text-center">
+                        <p class="text-sm text-gray-500">
+                            Didn't get it?
+                            <a href="{% url 'accounts:otp_send' %}" class="text-blue-600 hover:text-blue-700 font-medium">Send new code</a>
+                        </p>
+                    </div>
+                </div>
+
+                {# Powered by note #}
+                <p class="mt-6 text-center text-xs text-gray-400">
+                    Secured with 6-digit OTP verification
+                </p>
+            </div>
+        </div>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>
