@@ -1,9 +1,3 @@
-"""
-Seed the database with sample data for development.
-
-Usage: python manage.py seed_data
-"""
-
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group
 from accounts.models import CustomUser
