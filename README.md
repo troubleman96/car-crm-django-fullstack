@@ -599,7 +599,7 @@ Your Code → send_sms(phone, message)
 ```bash
 # Get an API key from https://sendafrica.online
 # Then set it in your .env file:
-SENDAFRICA_API_KEY=687c72abc476d89ae3584f72c207b223beb84086e51071d8ea21f60833a10172
+SENDAFRICA_API_KEY=
 ```
 
 ### Where SMS Is Sent
