@@ -16,8 +16,9 @@ setup to day-to-day commands.
 7. [Django Migrations](#7-django-migrations)
 8. [Exploring the Database](#8-exploring-the-database)
 9. [Import / Export](#9-import--export)
-10. [Common Problems](#10-common-problems)
-11. [Quick Reference](#11-quick-reference)
+10. [MySQL Workbench](#10-mysql-workbench--visual-database-tool)
+11. [Common Problems](#11-common-problems)
+12. [Quick Reference](#12-quick-reference)
 
 ---
 
@@ -497,7 +498,153 @@ docker exec -i mysql_container mysqldump -u root -p car_crm > backup.sql
 
 ---
 
-## 10. Common Problems
+## 10. MySQL Workbench — Visual Database Tool
+
+[MySQL Workbench](https://www.mysql.com/products/workbench/) is a free GUI for
+designing, browsing, and querying MySQL databases. It lets you see tables,
+relationships, and data without typing SQL.
+
+### 10.1 Installing MySQL Workbench
+
+| OS | Instructions |
+|----|-------------|
+| **Windows** | Download from <https://dev.mysql.com/downloads/workbench/> → run the MSI installer |
+| **Linux (Ubuntu/Debian)** | `sudo apt install mysql-workbench -y` |
+| **macOS** | Download the DMG from <https://dev.mysql.com/downloads/workbench/> |
+
+### 10.2 Connecting to the Database
+
+1. Open MySQL Workbench.
+2. Click the **+** icon next to "MySQL Connections" (or go to
+   `Database → Manage Connections → New`).
+3. Fill in the connection details:
+
+   | Field | Value |
+   |-------|-------|
+   | Connection Name | `CarCRM` (or anything you like) |
+   | Connection Method | Standard (TCP/IP) |
+   | Hostname | `127.0.0.1` or `localhost` |
+   | Port | `3306` |
+   | Username | Your MySQL user (e.g. `root` or `car_user`) |
+   | Password | Click **Store in Keychain** and type your `DB_PASSWORD` |
+
+4. Click **Test Connection**. If it succeeds, click **OK**.
+5. Double-click the new connection to open it.
+
+> **Can't connect?** Make sure MySQL is running (`sudo systemctl status mysql`).
+> If you see _"Access denied"_, check the password in `.env` vs what you're
+> typing in Workbench.
+
+### 10.3 Browsing the Schema
+
+Once connected, you'll see a **Navigator** panel on the left with three tabs:
+
+- **Administration** — server settings, users, logs
+- **Schemas** — this is the one you want
+
+Click the **Schemas** tab. You'll see `car_crm` (or whatever `DB_NAME` is).
+Expand it to reveal:
+
+```
+car_crm
+├── Tables
+│   ├── accounts_customuser
+│   ├── accounts_otp
+│   ├── advertising_banner
+│   ├── advertising_promotion
+│   ├── campaigns_campaign
+│   ├── campaigns_campaignrecipient
+│   ├── chatbot_chatsession
+│   ├── chatbot_chatmessage
+│   ├── leads_lead
+│   ├── leads_appointment
+│   ├── notifications_smslog
+│   ├── vehicles_car
+│   ├── vehicles_carimage
+│   ├── django_migrations
+│   ├── django_session
+│   └── django_admin_log
+├── Views
+└── Stored Procedures
+```
+
+Right-click any table → **Select Rows — Limit 1000** to see its data.
+
+### 10.4 Viewing the ER Diagram (Reverse Engineer)
+
+This is the most useful feature — it draws the relationship map automatically:
+
+1. Go to `Database → Reverse Engineer...` (or press `Ctrl+R`).
+2. Select your stored connection (`CarCRM`) and click **Next**.
+3. Select the `car_crm` database and click **Next**.
+4. Workbench will scan all tables and foreign keys — click **Next**.
+5. Click **Execute** to generate the ER diagram.
+
+> You'll see the ER diagram rendered as boxes (tables) connected by lines
+> (foreign keys). If no lines appear, ensure all tables use the InnoDB engine.
+
+You'll see every table as a box with its columns, connected by lines showing
+foreign-key relationships. You can:
+
+- **Rearrange** boxes by dragging them
+- **Zoom** with the scroll wheel
+- **Export** as PNG/PDF via `File → Export`
+- **Save** the diagram as a `.mwb` file to reopen later
+
+### 10.5 Running Queries
+
+1. Click the **SQL** icon (or `File → New Query Tab`).
+2. Type your query (e.g. `SELECT * FROM leads_lead LIMIT 10;`).
+3. Click the lightning bolt ⚡ icon or press `Ctrl+Enter`.
+
+Pro tips:
+
+- Workbench has **auto-complete** — start typing a table name and press `Tab`.
+- Use `Ctrl+Shift+Enter` to run only the highlighted SQL (not the whole file).
+- The **Action Output** pane at the bottom shows query results as a grid you
+  can sort and filter.
+
+### 10.6 Export / Import via Workbench
+
+**Export (dump)**:
+`Server → Data Export` → select `car_crm` → choose tables → **Start Export**.
+
+**Import (restore)**:
+`Server → Data Import` → select your `.sql` file → **Start Import**.
+
+This is the same as the `mysqldump` / `mysql` commands in Section 9, but with
+checkboxes and progress bars.
+
+### 10.7 Editing Table Data Directly
+
+1. Right-click a table → **Edit Table Data**.
+2. Edit cells directly in the grid.
+3. Click **Apply** (green tick) to save changes to the database.
+
+This is quicker than writing `UPDATE` statements for ad-hoc fixes.
+
+### 10.8 Creating a New Table Visually
+
+1. Right-click **Tables** under `car_crm` → **Create Table...**
+2. Fill in the table name and columns.
+3. Click **Apply** — Workbench generates the `CREATE TABLE` SQL for you.
+
+> **Important for Django projects**: Django expects table names to follow the
+> `<app>_<model>` convention (e.g. `leads_lead`). If you create tables manually,
+> Django won't manage them with `migrate`. Use the admin or migrations instead.
+
+### 10.9 Troubleshooting Workbench
+
+| Symptom | Fix |
+|---------|-----|
+| _"Cannot connect to MySQL server on 'localhost'_" | MySQL isn't running — `sudo systemctl start mysql` |
+| _"Access denied for user '_ | Wrong password — check `.env` and re-enter in Workbench |
+| ER diagram shows no relationships | Foreign keys might be missing — ensure tables use `InnoDB` |
+| Workbench is slow | Reduce the result set limit: `Edit → Preferences → SQL Editor → Limit Rows` |
+
+---
+
+## 11. Common Problems
 
 ### Problem: "Access denied for user 'root'@'localhost' (using password: NO)"
 
@@ -578,7 +725,7 @@ sudo systemctl start mysql
 
 ---
 
-## 11. Quick Reference
+## 12. Quick Reference
 
 ### Most-used MySQL commands
 

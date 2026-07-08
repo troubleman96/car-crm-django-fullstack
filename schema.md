@@ -169,6 +169,35 @@ CREATE TABLE campaigns_campaignrecipient (
 
 ---
 
+## 7. advertising — banners & promotions on the landing page
+
+```sql
+CREATE TABLE advertising_banner (
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title       VARCHAR(200) NOT NULL,
+    subtitle    TEXT NULL,
+    image_url   VARCHAR(500) NOT NULL,
+    link_url    VARCHAR(500) NULL,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    `order`     SMALLINT NOT NULL DEFAULT 0,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE advertising_promotion (
+    id               BIGINT AUTO_INCREMENT PRIMARY KEY,
+    car_id           BIGINT NOT NULL,
+    label            ENUM('featured','sale','new','hot') NOT NULL DEFAULT 'featured',
+    discount_percent SMALLINT NULL,
+    is_active        BOOLEAN NOT NULL DEFAULT TRUE,
+    starts_at        DATETIME NULL,
+    ends_at          DATETIME NULL,
+    created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (car_id) REFERENCES vehicles_car(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+---
+
 ## How the pieces connect (in one sentence each)
 
 - A visitor books/chats → a `leads_lead` row is created with just a phone number.

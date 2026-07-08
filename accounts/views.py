@@ -192,12 +192,11 @@ def customer_otp_send(request):
         sms_sent = send_sms(phone, f'Your verification code is {code}. Valid for 5 minutes.')
 
         if not sms_sent:
-            # If the API call failed, tell the user and re-render the form.
-            # messages.error() stores a flash message that will be shown on
-            # the next rendered page (the template must include a
-            # messages loop to display it).
-            messages.error(request, 'Failed to send SMS. Please try again.')
-            return render(request, 'accounts/otp_send.html', {'form': form})
+            # DEV: SMS failed but OTP was printed to console — allow proceed.
+            # In production, remove this fallback and let the error show.
+            print(f'[DEV] SMS send failed — OTP {code} is still valid for {phone}')
+            request.session['otp_phone'] = phone
+            return redirect('accounts:otp_verify')
 
         # ---------- Remember the phone in the session ----------
         # We store the phone number so the verify view can retrieve it

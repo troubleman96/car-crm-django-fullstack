@@ -29,6 +29,7 @@ Dependencies:
 
 import logging
 import re
+import ssl
 import urllib.request
 import urllib.error
 import json
@@ -184,7 +185,7 @@ def send_sms(phone: str, message: str) -> bool:
         # urlopen() performs the actual HTTP request. We give it a
         # 10-second timeout so the request doesn't hang forever if
         # the SendAfrica server is unreachable.
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=15, context=ssl.create_default_context()) as resp:
             # Read the response body (bytes), decode it to a string
             # (UTF-8), and parse the JSON string into a Python dict.
             body = json.loads(resp.read().decode())
@@ -246,15 +247,13 @@ def send_sms(phone: str, message: str) -> bool:
     #
     # The "as e" syntax binds the exception instance to the variable
     # `e` so we can access its string representation with str(e).
-    except (urllib.error.URLError, urllib.error.HTTPError,
-            OSError, json.JSONDecodeError) as e:
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode(errors='replace')
+        logger.error('SMS send failed for %s: HTTP %d %s — body: %s',
+                     phone, e.code, e.reason, error_body)
+        print(f'[SENDAFRICA ERROR] {e.code} {e.reason}: {error_body}')
+        SmsLog.objects.create(phone=phone, message=message, status='failed')
+    except (urllib.error.URLError, OSError, json.JSONDecodeError) as e:
         logger.error('SMS send failed for %s: %s', phone, str(e))
-
-        # Still log the attempt as 'failed' — the audit trail must be
-        # complete even when the network is down.
-        SmsLog.objects.create(
-            phone=phone,
-            message=message,
-            status='failed',
-        )
+        SmsLog.objects.create(phone=phone, message=message, status='failed')
         return False
