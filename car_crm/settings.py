@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'leads',
     'chatbot',
     'campaigns',
+    'advertising',
 ]
 
 MIDDLEWARE = [
@@ -155,6 +156,8 @@ JAZZMIN_SETTINGS = {
         'campaigns.CampaignRecipient': 'fas fa-receipt',
         'auth.Group': 'fas fa-users-cog',
         'auth.User': 'fas fa-user',
+        'advertising.Banner': 'fas fa-image',
+        'advertising.Promotion': 'fas fa-star',
     },
     'default_icon_parents': 'fas fa-chevron-circle-right',
     'default_icon_children': 'fas fa-circle',
