@@ -95,19 +95,21 @@
             <p class="text-gray-600 mt-4 leading-relaxed">{{ car.description }}</p>
             {% endif %}
 
-            {# =================================================================
-               ACTION BUTTONS
-               ---------------------------------------------------------------
-               Both buttons point to the same `leads:book` URL but use a
-               `?car={{ car.id }}` query parameter. The leads booking view
-               reads `request.GET.get('car')` to pre-populate the form with
-               this vehicle's info.
+            {% comment %}
+              =================================================================
+              ACTION BUTTONS
+              ---------------------------------------------------------------
+              Both buttons point to the same leads:book URL but use a
+              ?car={{ car.id }} query parameter. The leads booking view
+              reads request.GET.get('car') to pre-populate the form with
+              this vehicle's info.
 
-               WHY TWO BUTTONS?
-               - "Book Test Drive" and "Request Call Back" set the user's
-                 expectation for the appointment type, even though the actual
-                 selection happens on the booking form itself.
-              ================================================================= #}
+              WHY TWO BUTTONS?
+              - "Book Test Drive" and "Request Call Back" set the user's
+                expectation for the appointment type, even though the actual
+                selection happens on the booking form itself.
+              =================================================================
+            {% endcomment %}
 
             <div class="flex gap-3 mt-8">
                 <a href="{% url 'leads:book' %}?car={{ car.id }}" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition">Book Test Drive</a>
@@ -116,21 +118,23 @@
         </div>
     </div>
 
-    {# =========================================================================
-       THUMBNAIL GALLERY
-       ---------------------------------------------------------------
-       Condition: only render when `car.images.all|length > 1` — i.e. there
-       are at least two images attached. The primary image is already shown
-       in the hero section, so the gallery shows ALL images (including the
-       primary again) as clickable thumbnails.
+    {% comment %}
+      =========================================================================
+      THUMBNAIL GALLERY
+      ---------------------------------------------------------------
+      Condition: only render when car.images.all|length > 1 -- i.e. there
+      are at least two images attached. The primary image is already shown
+      in the hero section, so the gallery shows ALL images (including the
+      primary again) as clickable thumbnails.
 
-       TIP FOR STUDENTS:
-       In a more advanced implementation, you might add Alpine.js click
-       handlers to swap the hero image when a thumbnail is clicked:
-         x-data="{ selected: '{{ primary.image_url }}' }"
-         @click="selected = '{{ img.image_url }}'"
-       Then bind the hero <img> src to `selected`.
-      ========================================================================= #}
+      TIP FOR STUDENTS:
+      In a more advanced implementation, you might add Alpine.js click
+      handlers to swap the hero image when a thumbnail is clicked:
+        x-data="{ selected: '{{ primary.image_url }}' }"
+        @click="selected = '{{ img.image_url }}'"
+      Then bind the hero <img> src to selected.
+      =========================================================================
+    {% endcomment %}
 
     {% if car.images.all|length > 1 %}
     <div class="grid grid-cols-4 gap-2 mt-4">
@@ -143,11 +147,13 @@
     {% endif %}
 </div>
 
-{# =========================================================================
-   CHATBOT WIDGET
-   Included at the bottom so the floating chat bubble is available on every
-   page of the site, including the car detail view.
-  ========================================================================= #}
+{% comment %}
+  =========================================================================
+  CHATBOT WIDGET
+  Included at the bottom so the floating chat bubble is available on every
+  page of the site, including the car detail view.
+  =========================================================================
+{% endcomment %}
 
 {% include 'chatbot/widget.html' %}
 {% endblock %}
