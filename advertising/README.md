@@ -1,5 +1,7 @@
 # Advertising App — Banners & Promotions
 
+> **Quick links:** [`vehicles` app](../vehicles/README.md) · [vehicles templates](../templates/vehicles/README.md) · [templates advertising](../templates/advertising/README.md) · [root README](../README.md)
+
 ## Overview
 
 The `advertising` app manages **promotional content** displayed on the dealership's landing page. It provides two models: `Banner` (hero slider images) and `Promotion` (special deals on specific cars with discount badges). The `vehicles` app's landing page view imports these models and passes them to the template, where banners render as an Alpine.js carousel and promotions appear as labelled "Hot Deal" cards. This app follows Django's "reusable app" philosophy — it is self-contained and could be dropped into another project.

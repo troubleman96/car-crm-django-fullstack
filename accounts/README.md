@@ -1,5 +1,7 @@
 # Accounts App — User Authentication & OTP Login
 
+> **Quick links:** [`car_crm` project](../car_crm/README.md) · [`notifications` app](../notifications/README.md) · [accounts templates](../templates/accounts/README.md) · [root README](../README.md)
+
 ## Overview
 
 The `accounts` app handles **all user authentication** in the CarDealTZ CRM. It provides two separate login flows: **staff users** (dealership employees) log in with a phone number and password via a standard Django form, while **customers** (website visitors) log in using a passwordless OTP (One-Time Password) flow that sends a 6-digit code via SMS. The app defines a **custom user model** (`CustomUser`) that replaces Django's default `User` model, using the phone number as the unique login identifier instead of a username or email.

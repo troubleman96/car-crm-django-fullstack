@@ -1,5 +1,7 @@
 # Chatbot Templates
 
+> **Quick links:** [templates root](../README.md) · [chatbot app README](../../chatbot/README.md) · [vehicles templates](../vehicles/README.md) · [leads templates](../leads/README.md) · [root README](../../README.md)
+
 Location: `templates/chatbot/`
 
 A single partial template that implements a floating AI chat widget using

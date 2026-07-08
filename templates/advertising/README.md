@@ -1,5 +1,7 @@
 # Advertising Templates
 
+> **Quick links:** [templates root](../README.md) · [advertising app README](../../advertising/README.md) · [vehicles templates](../vehicles/README.md) · [root README](../../README.md)
+
 Location: `templates/advertising/`
 
 This directory is reserved for future advertising-related templates (e.g.

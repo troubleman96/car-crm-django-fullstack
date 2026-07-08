@@ -1,5 +1,7 @@
 # Leads App — Customer Leads & Appointment Booking
 
+> **Quick links:** [`vehicles` app](../vehicles/README.md) · [`notifications` app](../notifications/README.md) · [`chatbot` app](../chatbot/README.md) · [`campaigns` app](../campaigns/README.md) · [leads templates](../templates/leads/README.md) · [root README](../README.md)
+
 ## Overview
 
 The `leads` app manages the **sales pipeline** — tracking potential customers (leads) and their scheduled appointments (test drives, call-backs, showroom visits). It provides a public **booking form** where website visitors can book appointments, which automatically creates or links to a lead record, schedules the appointment, and sends a confirmation SMS. This app connects the `vehicles` inventory to real customer interactions.

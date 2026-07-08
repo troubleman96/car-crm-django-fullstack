@@ -1,5 +1,7 @@
 # Chatbot App — Live Chat Widget
 
+> **Quick links:** [`leads` app](../leads/README.md) · [`notifications` app](../notifications/README.md) · [chatbot template](../templates/chatbot/README.md) · [root README](../README.md)
+
 ## Overview
 
 The `chatbot` app provides a **real-time chat widget** for website visitors to engage with the dealership. It uses a keyword-matching bot engine (no AI/LLM) that supports both English and Swahili. The front-end is built with **Alpine.js** and communicates with the Django backend via a JSON API. Chat conversations are stored in the database, and leads are automatically created when visitors show interest or provide a phone number.

@@ -1,5 +1,7 @@
 # Accounts Templates
 
+> **Quick links:** [templates root](../README.md) · [accounts app README](../../accounts/README.md) · [vehicles templates](../vehicles/README.md) · [leads templates](../leads/README.md) · [root README](../../README.md)
+
 Location: `templates/accounts/`
 
 These are the authentication pages. They are **standalone** — they do NOT

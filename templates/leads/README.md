@@ -1,5 +1,7 @@
 # Leads Templates
 
+> **Quick links:** [templates root](../README.md) · [leads app README](../../leads/README.md) · [vehicles templates](../vehicles/README.md) · [chatbot template](../chatbot/README.md) · [root README](../../README.md)
+
 Location: `templates/leads/`
 
 Templates for appointment booking. Extends `base.html`.

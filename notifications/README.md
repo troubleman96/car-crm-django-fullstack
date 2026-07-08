@@ -1,5 +1,7 @@
 # Notifications App — Central SMS Service
 
+> **Quick links:** [`accounts` app](../accounts/README.md) · [`leads` app](../leads/README.md) · [`campaigns` app](../campaigns/README.md) · [`car_crm` settings](../car_crm/README.md) · [root README](../README.md)
+
 ## Overview
 
 The `notifications` app is the **central SMS sending service** for the entire CRM. It provides two key utilities used by every other app: `normalize_phone()` for converting Tanzanian phone numbers to a standard international format, and `send_sms()` for sending text messages via the **SendAfrica API**. Every SMS send attempt is recorded in the `SmsLog` model for audit purposes. This app **never raises exceptions** to its callers — it always returns `True`/`False` and logs failures gracefully.

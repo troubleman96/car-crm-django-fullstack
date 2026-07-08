@@ -1,5 +1,7 @@
 # Car CRM — Project Configuration Hub
 
+> **Quick links:** [`accounts` app](../accounts/README.md) · [`vehicles` app](../vehicles/README.md) · [`leads` app](../leads/README.md) · [`chatbot` app](../chatbot/README.md) · [`notifications` app](../notifications/README.md) · [`campaigns` app](../campaigns/README.md) · [`advertising` app](../advertising/README.md) · [templates docs](../templates/README.md) · [MySQL guide](../docs/mysql-guide.md) · [root README](../README.md)
+
 ## Overview
 
 The `car_crm` package is the **Django project configuration hub**. It contains the central `settings.py` (where all apps, databases, security, and third-party integrations are configured), `urls.py` (the root URL routing table), and the WSGI/ASGI entry points for deployment. This is the first code Django loads when the server starts — it ties together every app (accounts, vehicles, leads, chatbot, notifications, campaigns, advertising) into a single working CRM system.

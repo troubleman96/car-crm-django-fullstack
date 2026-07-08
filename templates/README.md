@@ -1,5 +1,7 @@
 # CarDealTZ Templates
 
+> **Quick links:** [accounts templates](accounts/README.md) · [vehicles templates](vehicles/README.md) · [leads templates](leads/README.md) · [chatbot template](chatbot/README.md) · [advertising templates](advertising/README.md) · [accounts app](../accounts/README.md) · [vehicles app](../vehicles/README.md) · [leads app](../leads/README.md) · [chatbot app](../chatbot/README.md) · [root README](../README.md)
+
 Location: `templates/`
 
 This directory contains all Django HTML templates for the CarDealTZ CRM.

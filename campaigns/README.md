@@ -1,5 +1,7 @@
 # Campaigns App — Bulk SMS Marketing
 
+> **Quick links:** [`notifications` app](../notifications/README.md) · [`leads` app](../leads/README.md) · [`accounts` app](../accounts/README.md) · [root README](../README.md)
+
 ## Overview
 
 The `campaigns` app enables the marketing team to create and send **bulk SMS campaigns** to leads. A campaign consists of a message template (with personalisation placeholders) and a list of recipients linked to leads. When triggered from the Django admin, the campaign iterates over each recipient, personalises the message (replacing `{full_name}` and `{phone}`), sends the SMS via the `notifications` service, and tracks the result for each recipient. Rate limiting (150ms delay between sends) keeps the system within the SendAfrica API limits.

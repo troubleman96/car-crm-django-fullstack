@@ -1,5 +1,7 @@
 # Vehicles App — Car Inventory Management
 
+> **Quick links:** [`advertising` app](../advertising/README.md) · [`leads` app](../leads/README.md) · [`chatbot` app](../chatbot/README.md) · [vehicles templates](../templates/vehicles/README.md) · [root README](../README.md)
+
 ## Overview
 
 The `vehicles` app manages the dealership's **car inventory** — the core product of the CRM. It defines two models (`Car` and `CarImage`) and provides two public views: the **landing page** (homepage) which displays available cars alongside banners and promotions from the `advertising` app, and a **car detail page** for individual vehicle information. This app is the central hub that leads, bookings, and promotions all connect to.

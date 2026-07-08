@@ -1,6 +1,29 @@
 # CarDealTZ — Car Dealership CRM for Tanzania
 
+**Version:** 1.0.0 | **Stack:** Django 6.0 · MySQL 8.0 / SQLite · Tailwind CSS · SendAfrica SMS · Alpine.js · Jazzmin
+
 A Django-based Customer Relationship Management (CRM) system built for car dealerships in Tanzania. Manages **vehicle inventory**, **customer leads**, **appointments**, **SMS notifications**, **live chat**, **marketing campaigns**, and **advertising promotions**.
+
+---
+
+## Documentation Map
+
+This README is the **entry point**. Each Django app has its own detailed README:
+
+| App | README | What It Covers |
+|-----|--------|----------------|
+| `car_crm/` | [car_crm/README.md](car_crm/README.md) | Project settings, database config, URL routing, env vars |
+| `accounts/` | [accounts/README.md](accounts/README.md) | User model, OTP login, staff password login, phone normalization |
+| `vehicles/` | [vehicles/README.md](vehicles/README.md) | Car inventory, landing page, car detail page, image management |
+| `leads/` | [leads/README.md](leads/README.md) | Lead pipeline, appointment booking, SMS confirmations |
+| `notifications/` | [notifications/README.md](notifications/README.md) | SMS gateway (SendAfrica), phone normalization, SmsLog audit |
+| `chatbot/` | [chatbot/README.md](chatbot/README.md) | Chat widget (Alpine.js), API, keyword bot engine, lead creation |
+| `campaigns/` | [campaigns/README.md](campaigns/README.md) | Bulk SMS marketing, campaign admin action, personalization |
+| `advertising/` | [advertising/README.md](advertising/README.md) | Banners, promotions, landing page integration |
+| `templates/` | [templates/README.md](templates/README.md) | Template hierarchy, context variables, design system |
+| `docs/` | [docs/mysql-guide.md](docs/mysql-guide.md) | MySQL commands, troubleshooting, backup/restore |
+
+**How to use this documentation:** Start here for the big picture, then dive into any app README above for implementation details. Each app README includes a "Dependencies" section that links to related apps.
 
 ```
 ╔══════════════════════════════════════════════════════════════╗

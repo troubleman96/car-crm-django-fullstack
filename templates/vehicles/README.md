@@ -1,5 +1,7 @@
 # Vehicles Templates
 
+> **Quick links:** [templates root](../README.md) · [vehicles app README](../../vehicles/README.md) · [leads templates](../leads/README.md) · [chatbot template](../chatbot/README.md) · [advertising templates](../advertising/README.md) · [root README](../../README.md)
+
 Location: `templates/vehicles/`
 
 Templates for browsing and viewing cars. Both extend `base.html` and
