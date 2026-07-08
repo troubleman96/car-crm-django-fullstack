@@ -1,6 +1,31 @@
 {% extends 'base.html' %}
 {% block title %}Verify Code - Car Dealership{% endblock %}
 {% block content %}
+{#
+   OTP VERIFY PAGE — Customer Login (Step 2 of 2)
+   ================================================
+   This is the second step of the customer OTP login flow.
+   After receiving the 6-digit code via SMS, the user enters it here.
+
+   Flow:
+     1. The phone number is already in the session (set by otp_send view)
+     2. User enters the 6-digit code they received via SMS
+     3. Form POSTs to accounts:otp_verify (/accounts/otp/verify/)
+     4. customer_otp_verify() view:
+        a. Looks up the OTP record matching phone + code + not used + not expired
+        b. If valid: marks OTP as used, creates/finds the user account,
+           logs the user in, redirects to home page (or booking page if
+           they were redirected from a booking)
+        c. If invalid/expired: shows error message
+     5. If the phone is not in the session (e.g. direct URL access),
+        redirects back to otp_send
+
+   Security notes:
+     - OTP codes are single-use (is_used=True prevents replay)
+     - OTP codes expire after 5 minutes (checked via expires_at__gt=now)
+     - The phone is stored in the session, not in a hidden form field
+       (prevents tampering)
+#}
 <div class="max-w-md mx-auto mt-16">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Verify Code</h1>
@@ -9,11 +34,16 @@
             {% csrf_token %}
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Verification Code</label>
-                <input type="text" name="code" maxlength="6" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-center text-2xl tracking-widest" placeholder="000000">
+                {# The input is styled with large centered text and wide letter-spacing
+                   for a better OTP-entry experience. maxlength=6 matches the 6-digit code. #}
+                <input type="text" name="code" maxlength="6" required
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm text-center text-2xl tracking-widest"
+                       placeholder="000000">
             </div>
             <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm transition">Verify</button>
         </form>
         <p class="mt-4 text-center text-sm text-gray-500">
+            {# If the code expired or never arrived, user can request a new one #}
             <a href="{% url 'accounts:otp_send' %}" class="text-blue-600 hover:text-blue-800">Request new code</a>
         </p>
     </div>

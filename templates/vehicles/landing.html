@@ -1,12 +1,61 @@
+{#
+================================================================================
+ TEMPLATE: landing.html
+ PURPOSE:  Main landing / homepage for CarDealTZ. Displays a rotating banner
+           carousel, a promotions ("Hot Deals") section, a full vehicle
+           inventory grid, and a CTA to book a showroom visit.
+
+ FLOW:
+   1. Extends base.html (inherits head/footer/nav from the base layout).
+   2. Checks if `banners` queryset exists → renders an Alpine.js carousel.
+      Falls back to a static hero text block if no banners.
+   3. Checks if `promotions` queryset exists → renders promotion cards
+      (with coloured labels, optional discount, primary image).
+   4. Renders ALL `cars` queryset in a responsive grid (3-col → 2-col → 1-col).
+      Shows an "empty state" message when no cars exist.
+   5. Includes the chatbot widget at the bottom of the page.
+
+ CONTEXT (provided by the view — likely vehicles/views.py):
+   - banners   : QuerySet of Banner models (image_url, title, subtitle, link_url)
+   - promotions: QuerySet of Promotion models (label, discount_percent, car FK)
+   - cars      : QuerySet of Vehicle models (make, model, year, price, images)
+
+ NOTE ON DJANGO TEMPLATE COMMENTS:
+   Comments use the {# #} syntax. These are NEVER sent to the browser —
+   they exist only in the template source file on the server.
+================================================================================
+#}
+
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}CarDealTZ - Find Your Perfect Car{% endblock %}
 {% block content %}
 <div class="space-y-12">
+
+    {% comment %}
+      ========================================================================
+      SECTION 1: BANNER CAROUSEL (Alpine.js powered)
+      ---------------------------------------------------------------
+      HOW IT WORKS:
+      - x-data="{ current: 0 }"  creates a local Alpine component with a
+        current counter tracking which banner is visible.
+      - x-init="setInterval(...)" auto-advances the carousel every 5 seconds
+        using modulo arithmetic (cycles through 0..N-1).
+      - Each banner div uses x-show="current === N" -- Alpine only displays
+        the div whose index matches current. The x-cloak attribute prevents
+        a flash of unstyled content before Alpine loads.
+      - Dot indicators at the bottom use @click="current = N" for manual
+        navigation and :class to highlight the active dot.
+      - The ``if banners`` / ``else`` pair provides a graceful
+        fallback: a plain text heading when no Banner objects exist in the DB.
+      ========================================================================
+    {% endcomment %}
+
     {% if banners %}
     <div class="relative overflow-hidden rounded-xl bg-gray-900" x-data="{ current: 0 }" x-init="setInterval(() => { current = (current + 1) % {{ banners|length }} }, 5000)">
         {% for banner in banners %}
         <div x-show="current === {{ forloop.counter0 }}" class="relative h-72 sm:h-96 flex items-center" x-cloak>
+            {# The banner image is set as a full-cover background with reduced opacity (opacity-60) so the text overlay remains readable. #}
             <img src="{{ banner.image_url }}" alt="{{ banner.title }}" class="absolute inset-0 w-full h-full object-cover opacity-60">
             <div class="relative z-10 px-8 sm:px-12 text-white max-w-2xl">
                 <h2 class="text-3xl sm:text-4xl font-bold mb-3">{{ banner.title }}</h2>
@@ -15,6 +64,7 @@
             </div>
         </div>
         {% endfor %}
+        {# DOT NAVIGATION: rendered once per banner, each dot's background colour toggles via Alpine's :class binding. #}
         <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
             {% for banner in banners %}
             <button @click="current = {{ forloop.counter0 }}" class="w-2.5 h-2.5 rounded-full transition" :class="current === {{ forloop.counter0 }} ? 'bg-white' : 'bg-white/40'"></button>
@@ -22,11 +72,36 @@
         </div>
     </div>
     {% else %}
+    {# FALLBACK: shown when the Banner model has zero rows in the database. #}
     <div class="text-center py-12">
         <h1 class="text-4xl font-bold text-gray-900 mb-4">Find Your Perfect Car in Tanzania</h1>
         <p class="text-lg text-gray-600 max-w-2xl mx-auto">Browse our inventory of quality vehicles. Book a test drive, schedule a visit, or chat with us.</p>
     </div>
     {% endif %}
+
+    {% comment %}
+      ========================================================================
+      SECTION 2: PROMOTIONS / "HOT DEALS"
+      ---------------------------------------------------------------
+      WHAT:
+      - Each promotion card shows a coloured label badge (sale=red, hot=orange,
+        new=green, default=blue), the car's primary image (or a placeholder
+        icon), make/model/year, price with optional strikethrough discount,
+        and two action buttons.
+      - promo.get_label_display calls the Django model's get_FOO_display()
+        method to turn the stored database code into its human-readable label.
+      - promo.car.images.all|dictsortreversed:"is_primary"|first sorts the
+        car's related images so the one marked is_primary=True comes first,
+        then grabs the first result. This is the "primary image" logic shared
+        across templates.
+      - The discount is faked via promo.car.price|add:promo.discount_percent.
+        In production you would store a true discount_price on the model.
+
+      WHY:
+      - Wrapping in ``if promotions`` means the entire section disappears
+        when there are no active promotions --- keeping the page clean.
+      ========================================================================
+    {% endcomment %}
 
     {% if promotions %}
     <div>
@@ -34,6 +109,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for promo in promotions %}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition relative">
+                {# LABEL BADGE: positioned absolute top-left. The CSS class is chosen dynamically based on the promo.label field. #}
                 <div class="absolute top-3 left-3 z-10">
                     <span class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
                         {% if promo.label == 'sale' %}bg-red-500 text-white
@@ -49,6 +125,7 @@
                         <img src="{{ primary.image_url }}" alt="{{ promo.car }}" class="w-full h-full object-cover">
                     </div>
                     {% else %}
+                    {# PLACEHOLDER: shown when the vehicle has no uploaded images at all. #}
                     <div class="h-48 bg-gray-100 flex items-center justify-center text-gray-400">
                         <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </div>
@@ -62,6 +139,7 @@
                         </div>
                         <div class="text-right">
                             {% if promo.discount_percent %}
+                            {# Discounted price: strike through the "original" (price + discount) and show the actual price in bold. #}
                             <span class="text-lg font-bold text-blue-600">TZS {{ promo.car.price|floatformat:0 }}</span>
                             <span class="block text-xs text-red-500 line-through">TZS {{ promo.car.price|add:promo.discount_percent|floatformat:0 }}</span>
                             {% else %}
@@ -69,6 +147,7 @@
                             {% endif %}
                         </div>
                     </div>
+                    {# ACTION BUTTONS: both link to the leads app. The first pre-selects the car via ?car=ID. The second goes to the full detail page. #}
                     <div class="flex gap-2 mt-4">
                         <a href="{% url 'leads:book' %}?car={{ promo.car.id }}" class="flex-1 text-center bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">Book Test Drive</a>
                         <a href="{% url 'vehicles:car_detail' promo.car.id %}" class="flex-1 text-center bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition">View Details</a>
@@ -79,6 +158,27 @@
         </div>
     </div>
     {% endif %}
+
+    {% comment %}
+      ========================================================================
+      SECTION 3: FULL VEHICLE INVENTORY GRID
+      ---------------------------------------------------------------
+      This grid always renders --- even when promotions are shown --- because
+      the "Hot Deals" only include promoted vehicles. The heading changes
+      contextually: "All Vehicles" if promotions exist, "Our Inventory"
+      otherwise.
+
+      The primary-image lookup uses the same dictsortreversed trick as the
+      promotions section. Each card shows make/model/year, price in TZS, and
+      two CTAs.
+
+      EMPTY STATE:
+      The ``empty`` block inside ``for car in cars`` is a Django-
+      specific feature. When the cars queryset is empty, the ``empty``
+      content is rendered instead of nothing --- giving the user feedback
+      rather than a blank container.
+      ========================================================================
+    {% endcomment %}
 
     <div>
         <h2 class="text-2xl font-bold text-gray-900 mb-6">{% if promotions %}All Vehicles{% else %}Our Inventory{% endif %}</h2>
@@ -111,6 +211,7 @@
                 </div>
             </div>
             {% empty %}
+            {# EMPTY STATE: Shown only when the cars queryset from the view contains zero Vehicle records. #}
             <div class="col-span-full text-center py-16 text-gray-500">
                 <p class="text-lg">No cars available right now.</p>
                 <p class="text-sm mt-1">Check back soon for new inventory.</p>
@@ -119,10 +220,30 @@
         </div>
     </div>
 
+    {% comment %}
+      ========================================================================
+      SECTION 4: GLOBAL CTA --- BOOK A SHOWROOM VISIT
+      ---------------------------------------------------------------
+      A simple, full-width call-to-action linking back to the leads booking
+      page without any pre-selected car (no ?car= parameter).
+      ========================================================================
+    {% endcomment %}
+
     <div class="text-center py-8">
         <a href="{% url 'leads:book' %}" class="inline-block bg-gray-900 text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-800 transition">Book a Showroom Visit</a>
     </div>
 </div>
+
+{% comment %}
+  ========================================================================
+  CHATBOT WIDGET (included on every page)
+  ---------------------------------------------------------------
+  The chatbot/widget.html template is pulled in here so the floating chat
+  bubble appears on the landing page. The widget is its own Alpine.js
+  component with a fetch-based API backend.
+  See templates/chatbot/widget.html for full documentation.
+  ========================================================================
+{% endcomment %}
 
 {% include 'chatbot/widget.html' %}
 {% endblock %}

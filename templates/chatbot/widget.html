@@ -1,66 +1,297 @@
+{% comment %}
+================================================================================
+ TEMPLATE: chatbot/widget.html
+ PURPOSE:  Floating chatbot widget that appears on every page via
+           ``include 'chatbot/widget.html'``.
+
+           Features:
+           - Toggle open/close via a circular floating button.
+           - Session-based conversation history.
+           - Sends user messages to a Django backend endpoint via fetch().
+           - Displays bot replies in a scrollable chat window.
+           - Pre-populates the user's phone number from Django's auth user
+             context (if logged in).
+
+ ARCHITECTURE OVERVIEW:
+   ┌─────────────────────────────────────────────────────────┐
+   │  widget.html  (this file)                               │
+   │  ┌───────────────────────────────────────────────────┐  │
+   │  │  Alpine.js component: x-data="chatWidget()"       │  │
+   │  │  Manages open/close, messages array, session ID,  │  │
+   │  │  phone, and the send()/toggle()/scrollDown()      │  │
+   │  │  methods.                                         │  │
+   │  └───────────────────────────────────────────────────┘  │
+   │  ┌───────────────────────────────────────────────────┐  │
+   │  │  <script> function chatWidget() { ... } </script> │  │
+   │  │  Standalone function defining the Alpine store.   │  │
+   │  │  The fetch() POSTs JSON to /chatbot/message/.     │  │
+   │  └───────────────────────────────────────────────────┘  │
+   └─────────────────────────────────────────────────────────┘
+
+   The Django view at /chatbot/message/ receives:
+     { "message": "...", "session_id": null|"abc", "phone": "..." }
+   And returns:
+     { "reply": "...", "session_id": "abc" }
+
+   The session_id is stored client-side and passed with every subsequent
+   message so the backend can maintain conversation continuity.
+   ============================================================================
+{% endcomment %}
+
+{# ===========================================================================
+   ALPINE.JS ROOT ELEMENT
+   ---------------------------------------------------------------
+   x-data="chatWidget()"   → initialises the component with the state and
+                             methods returned by the chatWidget() function.
+
+   x-init="init()"         → runs the init() method once when the component
+                             mounts. Here it reads the Django-rendered
+                             {{ user.phone }} value into the component's
+                             `phone` property.
+
+   NOTE: The outer <div> uses classes "chat-widget" and inline styles may
+   be defined in the project's CSS file (not shown here) to position it
+   fixed at the bottom-right of the viewport.
+  =========================================================================== #}
+
 <div class="chat-widget" x-data="chatWidget()" x-init="init()">
+
+    {# CHAT WINDOW — visible when `open` is true #}
+    {#
+       `:class="{'open': open}"` is an Alpine.js class-binding that adds the
+       CSS class "open" to the element when the `open` property is truthy.
+       The CSS likely sets `display: flex` (or similar) on `.chat-box.open`.
+    #}
     <div class="chat-box bg-white" :class="{'open': open}" id="chatBox">
+
+        {# HEADER: title bar with a close button #}
         <div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
             <span class="font-medium text-sm">Chat with us</span>
+            {# @click="toggle()" — Alpine shorthand for x-on:click. Calls the toggle() method to close the widget. #}
             <button @click="toggle()" class="text-white/80 hover:text-white text-lg leading-none">&times;</button>
         </div>
+
+        {# MESSAGES AREA #}
+        {#
+           x-for="msg in messages"  — Alpine's loop over the `messages` array.
+           :key="msg.id"            — provides a unique key for efficient DOM diffing.
+           x-text="msg.message"     — safely escapes and sets the text content.
+           :class="msg.sender === 'customer' ? ... : ..."
+               - Messages from the customer are right-aligned blue bubbles.
+               - Messages from the bot are left-aligned grey bubbles.
+               - The `rounded-br-sm` / `rounded-bl-sm` classes create the
+                 "speech bubble" tail effect.
+        #}
         <div class="chat-messages" id="chatMessages">
             <template x-for="msg in messages" :key="msg.id">
                 <div class="chat-msg" :class="msg.sender === 'customer' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'" x-text="msg.message"></div>
             </template>
         </div>
+
+        {# INPUT BAR: text input + send button #}
+        {#
+           x-model="input"           — two-way binds the input field to the
+                                       `input` property on the Alpine component.
+           @keydown.enter="send()"   — pressing Enter calls the send() method.
+           :disabled="!input.trim()" — disables the button when the input is
+                                       empty or whitespace-only.
+        #}
         <div class="chat-input-bar">
             <input type="text" x-model="input" @keydown.enter="send()" placeholder="Type a message..." id="chatInput">
             <button @click="send()" class="bg-blue-600 text-white hover:bg-blue-700 transition" :disabled="!input.trim()">Send</button>
         </div>
     </div>
+
+    {# FLOATING CHAT BUTTON — visible when `open` is false #}
+    {#
+       @click="toggle()" — clicking the bubble toggles the chat open/closed.
+       The SVG is a standard chat bubble icon from Heroicons.
+    #}
     <div class="chat-widget-btn bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition" @click="toggle()">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
     </div>
 </div>
 
+{# ===========================================================================
+   ALPINE.JS CDN
+   ---------------------------------------------------------------
+   This loads the Alpine.js library from a CDN. The `defer` attribute ensures
+   the script is fetched in parallel with the page and executed after the HTML
+   has been parsed. Alpine processes all `x-` attributes and `x-data`
+   components on DOMContentLoaded.
+
+   IMPORTANT FOR STUDENTS:
+   In production you would typically install Alpine via npm (or download it)
+   rather than relying on an external CDN, to avoid third-party downtime
+   and potential security risks from CDN compromise.
+  =========================================================================== #}
+
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{# ===========================================================================
+   CHAT WIDGET ALPINE.JS COMPONENT — chatWidget()
+   ---------------------------------------------------------------
+   This is a plain JavaScript function that returns an object. Alpine.js
+   picks it up from the global scope (window) and uses it as the data model
+   for any element with `x-data="chatWidget()"`.
+
+   PROPERTIES:
+     open      : Boolean — whether the chat window is visible.
+     input     : String — the current value of the message input field.
+     sessionId : String|null — a session token returned by the backend.
+                 Used to maintain conversation continuity across messages.
+                 Starts as null; after the first response the backend assigns
+                 a session_id that we store and send with every subsequent
+                 message.
+     phone     : String — the user's phone number, pre-populated from the
+                 Django auth system ({{ user.phone }}) if available.
+     messages  : Array<{id: Number, sender: String, message: String}>
+                 The conversation history. Pre-loaded with a welcome message
+                 from the bot.
+
+   METHODS:
+     toggle()     : Opens/closes the chat. Auto-scrolls to the bottom when
+                    opening so the user sees the latest messages.
+     send()       : (async) Sends the current input to the backend API via
+                    fetch(), appends the user message to the UI immediately
+                    (optimistic update), then appends the bot's reply when
+                    the response arrives.
+     scrollDown() : Scrolls the messages container (#chatMessages) to its
+                    full scroll height so new messages are visible.
+     init()       : Lifecycle hook that runs on component initialisation.
+                    Pre-populates `phone` with the logged-in user's phone
+                    number from the Django template context (if available).
+
+   fetch() API CALL (in send()):
+     POST /chatbot/message/
+     Headers:
+       Content-Type: application/json
+       X-CSRFToken: {{ csrf_token }}  — Django's CSRF protection token.
+                                        This is rendered by the template so
+                                        it is available to JavaScript. The
+                                        Django view uses CsrfViewMiddleware
+                                        to verify this token on every POST.
+     Body:
+       { "message": "<user text>",
+         "session_id": "<current session or null>",
+         "phone": "<user phone or empty>" }
+
+     Response (JSON):
+       { "reply": "<bot response text>",
+         "session_id": "<assigned session ID>" }
+  =========================================================================== #}
+
 <script>
 function chatWidget() {
     return {
-        open: false,
-        input: '',
-        sessionId: null,
-        phone: '',
+        // ---- STATE ----
+
+        open: false,            // Chat starts closed; user clicks the bubble to open.
+        input: '',              // Bound to the text input via x-model.
+        sessionId: null,        // Assigned by the backend after the first message.
+        phone: '',              // Pre-filled from Django's {{ user.phone }} if user is authenticated.
+
+        // Initial message array with a single welcome message from the bot.
         messages: [
             { id: 0, sender: 'bot', message: 'Hello! Welcome to CarDealTZ. How can I help you today?' }
         ],
+
+        // ---- METHODS ----
+
+        // toggle(): Flip the `open` flag. When opening, wait for the CSS
+        // transition to complete (100ms), then scroll to the bottom.
         toggle() {
             this.open = !this.open;
             if (this.open) setTimeout(() => this.scrollDown(), 100);
         },
+
+        // send(): The core function. (async — it uses await internally)
         async send() {
+            // Guard: do nothing if input is empty or only whitespace.
             if (!this.input.trim()) return;
+
+            // Capture the message text BEFORE clearing the input (optimistic UI).
             const msg = this.input;
+
+            // Immediately push the user's message to the UI array so it
+            // appears without waiting for the server response.
             this.messages.push({ id: Date.now(), sender: 'customer', message: msg });
+
+            // Clear the input field for the next message.
             this.input = '';
+
+            // Scroll to the bottom to show the user their message.
             this.scrollDown();
+
             try {
+                // -----------------------------------------------------------
+                // fetch() — AJAX call to the Django backend.
+                // -----------------------------------------------------------
+                // The URL /chatbot/message/ should map to a Django URL pattern
+                // in chatbot/urls.py, which routes to a view in chatbot/views.py.
+                //
+                // Headers:
+                //   Content-Type: application/json  — tells Django the body is JSON.
+                //   X-CSRFToken: {{ csrf_token }}    — the CSRF token generated by
+                //     Django's template engine. This must match the token in the
+                //     user's session cookie. The Django view (decorated with
+                //     @csrf_exempt or using CsrfViewMiddleware) will verify it.
+                //
+                // Body (JSON.stringify):
+                //   message    : the user's text
+                //   session_id : null for the first message; an opaque string for
+                //                subsequent messages. The backend uses this to
+                //                look up or create a ChatSession model instance.
+                //   phone      : the user's phone, if available. The backend may
+                //                use this to create a Lead or link the session.
+                // -----------------------------------------------------------
                 const res = await fetch('/chatbot/message/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                     body: JSON.stringify({ message: msg, session_id: this.sessionId, phone: this.phone })
                 });
+
+                // Parse the JSON response from the backend.
                 const data = await res.json();
+
+                // Store the session_id returned by the server for future messages.
+                // This is how the backend ties multiple messages into one conversation.
                 this.sessionId = data.session_id;
+
+                // Push the bot's reply into the messages array.
                 this.messages.push({ id: Date.now() + 1, sender: 'bot', message: data.reply });
+
+                // Scroll to the bottom to reveal the bot's reply.
                 this.scrollDown();
+
             } catch(e) {
+                // NETWORK ERROR HANDLING:
+                // If fetch() throws (e.g. network is offline, DNS failure, server 500),
+                // push a friendly error message so the user knows something went wrong.
                 this.messages.push({ id: Date.now() + 1, sender: 'bot', message: 'Sorry, something went wrong. Please try again.' });
                 this.scrollDown();
             }
         },
+
+        // scrollDown(): Scrolls the chat-messages container to the bottom.
+        // Uses a short setTimeout to ensure the DOM has updated (via Alpine's
+        // reactive rendering) before attempting to read scrollHeight.
         scrollDown() {
             setTimeout(() => {
                 const el = document.getElementById('chatMessages');
                 if (el) el.scrollTop = el.scrollHeight;
             }, 50);
         },
+
+        // init(): Alpine lifecycle hook — called automatically when the
+        // component is initialised. We use it to grab the Django-rendered
+        // user phone number.
+        //
+        // {{ user.phone|default:"" }} is evaluated by Django's template engine
+        // on the server. If the user is authenticated and has a phone number,
+        // it is injected directly into the JavaScript string. If the user is
+        // anonymous, `user.phone` would raise an error, so the `|default:""`
+        // filter provides a safe fallback.
         init() {
             this.phone = '{{ user.phone|default:"" }}';
         }

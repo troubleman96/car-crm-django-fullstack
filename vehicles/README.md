@@ -1,6 +1,8 @@
-# Vehicles App — Car Inventory
+# Vehicles App — Car Inventory Management
 
-Manages the dealership's car inventory — CRUD for cars and images, public listing and detail pages.
+## Overview
+
+The `vehicles` app manages the dealership's **car inventory** — the core product of the CRM. It defines two models (`Car` and `CarImage`) and provides two public views: the **landing page** (homepage) which displays available cars alongside banners and promotions from the `advertising` app, and a **car detail page** for individual vehicle information. This app is the central hub that leads, bookings, and promotions all connect to.
 
 ---
 
@@ -8,89 +10,137 @@ Manages the dealership's car inventory — CRUD for cars and images, public list
 
 ### Car
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | BIGINT, PK | Auto-generated |
-| `make` | VARCHAR(50) | Manufacturer (Toyota, Nissan, BMW, etc.) |
-| `model` | VARCHAR(50) | Model name (Hilux, X-Trail, X5, etc.) |
-| `year` | SMALLINT | Manufacturing year |
-| `price` | DECIMAL(12,2) | Price in Tanzanian Shillings (TZS) |
-| `status` | ENUM('available','reserved','sold') | Inventory status |
-| `description` | TEXT, nullable | Detailed description, features, condition |
-| `created_at` | DATETIME, auto | When added to inventory |
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `make` | `CharField(max_length=50)` | Required | Car manufacturer (e.g. "Toyota", "BMW") |
+| `model` | `CharField(max_length=50)` | Required | Model name (e.g. "Hilux", "X5") |
+| `year` | `SmallIntegerField` | Required | Manufacturing year |
+| `price` | `DecimalField(max_digits=12, decimal_places=2)` | Required | Price in Tanzanian Shillings (TZS). Uses `DecimalField` (not `FloatField`) for accurate financial calculations. |
+| `status` | `CharField(max_length=10)` | `choices=STATUS_CHOICES, default='available'` | One of: `available`, `reserved`, `sold` |
+| `description` | `TextField` | `null=True, blank=True` | Optional detailed description |
+| `created_at` | `DateTimeField` | `auto_now_add=True` | Timestamp of when the car was added to inventory |
+
+**STATUS_CHOICES:**
+- `available` — visible on the public landing page
+- `reserved` — hidden from public listing (a deposit has been paid)
+- `sold` — hidden from public listing (sale completed)
+
+**Meta:** `ordering = ['-created_at']` — newest cars first by default.
 
 ### CarImage
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | BIGINT, PK | Auto-generated |
-| `car` | FK -> Car | Parent car (CASCADE delete) |
-| `image_url` | VARCHAR(255) | URL or path to image |
-| `is_primary` | BOOLEAN | Primary image shown in listings |
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `car` | `ForeignKey(Car)` | `on_delete=CASCADE, related_name='images'` | The car this image belongs to. `CASCADE` means deleting a car deletes all its images. |
+| `image_url` | `CharField(max_length=255)` | Required | URL pointing to the image file (remote or local) |
+| `is_primary` | `BooleanField` | `default=False` | Flag to designate the main/thumbnail image for a car listing |
+
+**Relationship:** One `Car` → many `CarImage` records (one-to-many). Access via `car.images.all()`.
 
 ---
 
-## Views
+## How It Works
 
-### Landing Page (`/`)
+### Landing Page Rendering
 
-- Lists all `status='available'` cars in a responsive grid (1-3 columns)
-- Each card shows: primary image (or placeholder), make/model, year, price
-- Action buttons: "Book Test Drive" (links to booking with car preselected), "View Details"
-- Includes chatbot widget
-- Fallback message when no cars available
+The `landing_page` view in `views.py` gathers three categories of data and passes them to the `vehicles/landing.html` template:
 
-### Car Detail (`/car/<id>/`)
+```
+landing_page(request)
+    │
+    ├─ 1. Fetch available cars
+    │     Car.objects.filter(status='available')
+    │         .prefetch_related('images')
+    │     └─ Only cars with status='available' are shown
+    │     └─ prefetch_related prevents N+1 queries for images
+    │
+    ├─ 2. Fetch active banners
+    │     Banner.objects.filter(is_active=True)
+    │     └─ From the advertising app
+    │
+    └─ 3. Fetch current promotions
+          Promotion.objects.filter(
+              is_active=True,
+              starts_at__lte=now,
+              ends_at__gte=now,
+          ).select_related('car')
+          └─ Only active promotions within their date range
+          └─ select_related JOINs the Car data in the same query
+```
 
-- Full-width image, car details, price, description
-- Additional images gallery (if multiple images exist)
-- Action buttons: "Book Test Drive", "Request Call Back"
-- Includes chatbot widget
+**Template rendering order on the landing page:**
+
+1. **Banner Carousel** — If banners exist, an Alpine.js-powered carousel auto-advances every 5 seconds showing banner images, titles, subtitles, and optional "Learn More" links. Falls back to a static hero heading if no banners.
+
+2. **Hot Deals / Promotions** — If active promotions exist, a grid of promotion cards shows a coloured label badge (sale=red, hot=orange, new=green, featured=blue), the car's primary image, make/model/year, price with optional strikethrough discount, and "Book Test Drive" / "View Details" buttons.
+
+3. **All Vehicles Grid** — Always rendered. A responsive 3-column grid of every available car. Each card shows the primary image, make/model/year, price, and action buttons. If no cars exist, an "empty state" message is displayed.
+
+4. **Global CTA** — A "Book a Showroom Visit" link at the bottom.
+
+5. **Chatbot Widget** — `{% include 'chatbot/widget.html' %}` loads the floating chat widget.
+
+### Car Detail Page
+
+```
+/car/<car_id>/
+    │
+    └─ car_detail(request, car_id)
+          car = get_object_or_404(
+              Car.objects.prefetch_related('images'),
+              id=car_id
+          )
+          └─ Renders vehicles/car_detail.html with the single car
+          └─ 404 if the car ID doesn't exist
+```
+
+The `car_id` parameter is captured from the URL via the path converter `<int:car_id>`.
+
+---
+
+## URLs
+
+| URL Pattern | View Function | Name | Description |
+|-------------|---------------|------|-------------|
+| `/` | `landing_page` | `vehicles:landing` | Homepage — shows banners, promotions, and all available cars |
+| `/car/<int:car_id>/` | `car_detail` | `vehicles:car_detail` | Single car detail page |
+
+Note: The vehicles app is mounted at the **root** of the site (`path('', include('vehicles.urls'))` in the project's `urls.py`), so `/` is the landing page and `/car/5/` is a car detail page.
 
 ---
 
 ## Admin
 
-`CarAdmin` with `CarImageInline`:
+Registered in `vehicles/admin.py`:
 
-- List display: make, model, year, price, status, created_at
-- Filters: status, make, year
-- Search: make, model, description
-- Inline image management (add/remove images from car edit page)
+### CarAdmin
+- **List columns:** `make`, `model`, `year`, `price`, `status`, `created_at`
+- **Filters:** `status`, `make`, `year`
+- **Search:** `make`, `model`, `description`
+- **Inline:** `CarImageInline` — manage all car images directly on the Car edit page
 
-`CarImageAdmin`: Standalone list with filter by is_primary.
+### CarImageAdmin
+- **List columns:** `car`, `image_url`, `is_primary`
+- **Filter:** `is_primary`
 
----
-
-## URL Endpoints
-
-| URL | View | Description |
-|-----|------|-------------|
-| `/` | `landing_page` | Public car listing |
-| `/car/<int:car_id>/` | `car_detail` | Car detail page |
+### CarImageInline (TabularInline)
+- Shows related `CarImage` records as a table on the Car change form
+- `extra = 1` — shows one blank row for adding a new image
 
 ---
 
-## Seed Data
+## Performance Optimizations
 
-8 cars with realistic Tanzania-market data:
-
-1. Toyota Hilux (2023) — TZS 95,000,000
-2. Toyota Land Cruiser Prado (2022) — TZS 180,000,000
-3. Nissan X-Trail (2023) — TZS 65,000,000
-4. Suzuki Swift (2024) — TZS 28,000,000
-5. BMW X5 (2021) — TZS 150,000,000
-6. Mercedes-Benz C-Class (2023) — TZS 85,000,000
-7. Honda CR-V (2022) — TZS 72,000,000
-8. Mitsubishi Outlander (2023) — TZS 58,000,000
-
-Each car gets one primary image (Unsplash CDN URLs) and all are `status='available'`.
+- **`prefetch_related('images')`** — Used in both views to fetch all related images in 2 queries (1 for cars + 1 for images) instead of N+1 queries.
+- **`select_related('car')`** — Used in the promotions query to JOIN the Car data in the same SQL query, avoiding a separate query for each promotion's car.
+- **`filter(status='available')`** — Only fetches cars that should be visible to the public, reducing the result set.
 
 ---
 
-## Templates
+## Dependencies
 
-- `templates/vehicles/landing.html` — Grid listing with Tailwind CSS
-- `templates/vehicles/car_detail.html` — Single car view with gallery
-
-Both templates include `{% include 'chatbot/widget.html' %}`.
+- **`advertising/models.py`** — The landing page imports `Banner` and `Promotion` from the advertising app to build the homepage context.
+- **`accounts/models.py`** — `CustomUser` is referenced indirectly when booking links pass user context.
+- **`leads` app** — The "Book Test Drive" buttons on car cards link to `/leads/book/?car=<id>`.
+- **`chatbot` app** — The landing page includes `chatbot/widget.html`.
+- **`templates/base.html`** — The landing template extends this base layout.

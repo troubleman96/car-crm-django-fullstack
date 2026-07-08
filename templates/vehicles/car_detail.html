@@ -1,20 +1,87 @@
+{#
+================================================================================
+ TEMPLATE: car_detail.html
+ PURPOSE:  Single-vehicle detail page. Shows the car's primary image (large
+           hero), make/model/year, price, description, thumbnail gallery of
+           all related images, and action buttons for booking a test drive or
+           requesting a call back.
+
+ FLOW:
+   1. Extends base.html with a dynamic <title> that includes the car's make
+      and model (e.g. "Toyota Camry - CarDealTZ").
+   2. Displays a "Back to inventory" breadcrumb link pointing to the home page.
+   3. Primary image section: selects the image where `is_primary=True` via the
+      `dictsortreversed` filter chain. Falls back to a placeholder SVG if no
+      images exist.
+   4. Info section: car name, year, price (formatted with `floatformat`),
+      and an optional `description` field.
+   5. Action buttons: both link to the `leads:book` URL — one for test drives,
+      one for call backs. The `?car={{ car.id }}` query parameter pre-selects
+      this vehicle on the booking form.
+   6. Thumbnail gallery: appears only when more than one image is attached
+      to the car. All images (including the primary) are shown at a smaller
+      scale so the user can browse the full set.
+
+ CONTEXT (provided by the view — vehicles/views.py):
+   - car : A single Vehicle model instance (includes make, model, year, price,
+           description, and the reverse relation `images.all` from the
+           associated VehicleImage model).
+  ============================================================================ #}
+
 {% extends 'base.html' %}
 {% block title %}{{ car.make }} {{ car.model }} - CarDealTZ{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto">
+
+    {# BREADCRUMB: A simple link back to the home page. In a larger site you might use a proper breadcrumb trail. #}
     <a href="/" class="text-sm text-blue-600 hover:text-blue-800 mb-4 inline-block">&larr; Back to inventory</a>
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
+        {% comment %}
+          =====================================================================
+          PRIMARY IMAGE
+          ---------------------------------------------------------------
+          The with tag creates a local template variable primary by:
+           1. car.images.all -- fetch ALL VehicleImage rows related to this car
+              (Django's reverse FK relationship).
+           2. dictsortreversed:"is_primary" -- sort the list of image dicts
+              (or objects) by the is_primary field in REVERSE order, so
+              True (1) comes before False (0).
+           3. |first -- grab the first element, which is the primary image.
+
+          If the vehicle has NO images, primary will be falsy and the
+          ``else`` branch renders a placeholder icon instead.
+          =====================================================================
+        {% endcomment %}
+
         {% with primary=car.images.all|dictsortreversed:"is_primary"|first %}
             {% if primary %}
             <div class="h-80 bg-gray-100 flex items-center justify-center overflow-hidden">
                 <img src="{{ primary.image_url }}" alt="{{ car }}" class="w-full h-full object-cover">
             </div>
             {% else %}
+            {# FALLBACK: displayed only when the VehicleImage table has NO rows linked to this car. #}
             <div class="h-80 bg-gray-100 flex items-center justify-center text-gray-400">
                 <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             </div>
             {% endif %}
         {% endwith %}
+
+        {% comment %}
+          =====================================================================
+          VEHICLE INFO & PRICE
+          ---------------------------------------------------------------
+          car.price|floatformat:0 formats the price number with zero decimal
+          places (e.g. 45000000 -> "45000000"). The "TZS" prefix is hardcoded
+          since this is a Tanzania-focused dealership.
+
+          The description field is optional on the Vehicle model, so it is
+          wrapped in ``if car.description`` to avoid rendering an empty
+          p tag when no description has been entered.
+          =====================================================================
+        {% endcomment %}
+
         <div class="p-8">
             <div class="flex justify-between items-start mb-4">
                 <div>
@@ -23,15 +90,48 @@
                 </div>
                 <span class="text-2xl font-bold text-blue-600">TZS {{ car.price|floatformat:0 }}</span>
             </div>
+
             {% if car.description %}
             <p class="text-gray-600 mt-4 leading-relaxed">{{ car.description }}</p>
             {% endif %}
+
+            {# =================================================================
+               ACTION BUTTONS
+               ---------------------------------------------------------------
+               Both buttons point to the same `leads:book` URL but use a
+               `?car={{ car.id }}` query parameter. The leads booking view
+               reads `request.GET.get('car')` to pre-populate the form with
+               this vehicle's info.
+
+               WHY TWO BUTTONS?
+               - "Book Test Drive" and "Request Call Back" set the user's
+                 expectation for the appointment type, even though the actual
+                 selection happens on the booking form itself.
+              ================================================================= #}
+
             <div class="flex gap-3 mt-8">
                 <a href="{% url 'leads:book' %}?car={{ car.id }}" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition">Book Test Drive</a>
                 <a href="{% url 'leads:book' %}?car={{ car.id }}" class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition">Request Call Back</a>
             </div>
         </div>
     </div>
+
+    {# =========================================================================
+       THUMBNAIL GALLERY
+       ---------------------------------------------------------------
+       Condition: only render when `car.images.all|length > 1` — i.e. there
+       are at least two images attached. The primary image is already shown
+       in the hero section, so the gallery shows ALL images (including the
+       primary again) as clickable thumbnails.
+
+       TIP FOR STUDENTS:
+       In a more advanced implementation, you might add Alpine.js click
+       handlers to swap the hero image when a thumbnail is clicked:
+         x-data="{ selected: '{{ primary.image_url }}' }"
+         @click="selected = '{{ img.image_url }}'"
+       Then bind the hero <img> src to `selected`.
+      ========================================================================= #}
+
     {% if car.images.all|length > 1 %}
     <div class="grid grid-cols-4 gap-2 mt-4">
         {% for img in car.images.all %}
@@ -42,5 +142,12 @@
     </div>
     {% endif %}
 </div>
+
+{# =========================================================================
+   CHATBOT WIDGET
+   Included at the bottom so the floating chat bubble is available on every
+   page of the site, including the car detail view.
+  ========================================================================= #}
+
 {% include 'chatbot/widget.html' %}
 {% endblock %}
